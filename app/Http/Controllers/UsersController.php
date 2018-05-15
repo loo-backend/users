@@ -2,20 +2,64 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\UserAllService;
 use App\Services\UserCreateService;
+use App\Services\UserFindService;
+use App\Validators\UserCreateTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class UsersController extends Controller
 {
+
+    use UserCreateTrait;
+
+
+    /**
+     * @var UserCreateService
+     */
+    private $createService;
+    /**
+     * @var UserFindService
+     */
+    private $userFindService;
+    /**
+     * @var UserAllService
+     */
+    private $userAllService;
+
+    /**
+     * UsersController constructor.
+     * @param UserCreateService $createService
+     * @param UserFindService $userFindService
+     * @param UserAllService $userAllService
+     */
+    public function __construct(UserCreateService $createService,
+                                UserFindService $userFindService,
+                                UserAllService $userAllService)
+    {
+
+        $this->createService = $createService;
+        $this->userFindService = $userFindService;
+        $this->userAllService = $userAllService;
+    }
+
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
      */
     public function index()
     {
-        //
+
+
+        if (!$result = $this->userAllService->all()) {
+
+            return response()->json(['error' => 'users_not_found'], 422);
+        }
+
+        return response()->json($result,200);
+
+
     }
 
 
@@ -24,40 +68,40 @@ class UsersController extends Controller
      * Store a newly created resource in storage.
      *
      * @param Request $request
-     * @param UserCreateService $service
      * @return \Illuminate\Http\JsonResponse|Response
+     * @throws \Exception
      */
-    public function store(Request $request, UserCreateService $service)
+    public function store(Request $request)
     {
 
+        $this->validateCreate($request);
 
+        if (!$result = $this->createService->create($request)) {
 
-        $this->validate($request,[
-            'name' => 'required|max:255',
-            'email' => 'required|unique:users|max:255',
-            'password' => 'required|confirmed|max:255'
-        ]);
-
-
-        if (!$result = $service->create($request)) {
-
-            return new Response(['error' => 'user_not_created'], 500);
+            return response()->json(['error' => 'user_not_created'], 500);
         }
 
-        return new Response($result,200);
-
+        return response()->json($result,200);
 
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param  int $id
+     * @return bool
+     * @throws \Exception
      */
     public function show($id)
     {
-        //
+
+        if (!$result = $this->userFindService->findBy($id)) {
+
+            return response()->json(['error' => 'user_not_found'], 422);
+        }
+
+        return response()->json($result,200);
+
     }
 
     /**

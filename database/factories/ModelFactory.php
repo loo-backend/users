@@ -13,9 +13,29 @@
 
 use Illuminate\Support\Facades\Hash;
 
+
+//$data['roles'] =    [[
+//        'name' => 'CLIENT_ADMIN',
+//        'permissions' => [
+//            'ALL'
+//        ],
+//    ],
+//        [
+//            'name' => 'CLIENT_STAFF',
+//            'permissions' => [
+//                'CREATE',
+//                'READ',
+//                'UPDATE',
+//            ]
+//        ]
+//    ];
+
+
+
 $factory->define(App\User::class, function (Faker\Generator $faker) {
     return [
         'name' => $faker->name,
-        'email' => $faker->email
+        'email' => $faker->email,
+
     ];
 });
