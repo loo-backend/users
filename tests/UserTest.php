@@ -1,6 +1,7 @@
 <?php
 
 use App\User;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 
 
@@ -14,6 +15,7 @@ class UserTest extends TestCase
         parent::__construct($name, $data, $dataName);
 
         Schema::connection('mongodb')->drop('users');
+        Artisan::call('migrate');
 
         $this->data = [
             'name' => str_random(10),
@@ -99,6 +101,75 @@ class UserTest extends TestCase
         ]);
 
 
+    }
+
+
+
+    public function testUpdateUserNoPassword()
+    {
+        $user = User::first();
+
+        $data = [
+            'name' => str_random(12),
+            'email' => str_random(6) . '@mail.com'
+        ];
+
+        $this->put('/users/'. $user->id, $data);
+        $this->assertResponseOk();
+
+        $response = (array) json_decode($this->response->content());
+
+        $this->assertArrayHasKey('_id',$response);
+        $this->assertArrayHasKey('name',$response);
+        $this->assertArrayHasKey('email',$response);
+        $this->assertArrayHasKey('roles',$response);
+
+        $this->notSeeInDatabase('users',[
+            'name' => $user->name,
+            'email' => $user->email,
+            '_id' => $user->id
+        ]);
+
+    }
+
+    public function testUpdateUserWithPassword()
+    {
+        $user = \App\User::first();
+        $data = [
+            'name' => str_random(12),
+            'email' => str_random(6) . '@mail.com',
+            'password' => '123456',
+            'password_confirmation' => '123456'
+        ];
+
+        $this->put('/users/' . $user->id, $data);
+
+        $this->assertResponseOk();
+
+        $response = (array)json_decode($this->response->content());
+
+        $this->assertArrayHasKey('_id',$response);
+        $this->assertArrayHasKey('name',$response);
+        $this->assertArrayHasKey('email',$response);
+        $this->assertArrayHasKey('roles',$response);
+
+        $this->notSeeInDatabase('users', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'id' => $user->id
+        ]);
+
+    }
+
+
+    public function testDeleteUser()
+    {
+        $user = User::first();
+        $this->delete('/users/'.$user->id);
+        $this->assertResponseOk();
+        $this->seeJsonEquals([
+            'response' => 'user_removed'
+        ]);
     }
 
 }

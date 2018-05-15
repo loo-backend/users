@@ -5,14 +5,13 @@ namespace App\Http\Controllers;
 use App\Services\UserAllService;
 use App\Services\UserCreateService;
 use App\Services\UserFindService;
-use App\Validators\UserCreateTrait;
+use App\Services\UserRemoveService;
+use App\Services\UserUpdateService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class UsersController extends Controller
 {
-
-    use UserCreateTrait;
 
 
     /**
@@ -22,26 +21,40 @@ class UsersController extends Controller
     /**
      * @var UserFindService
      */
-    private $userFindService;
+    private $findService;
     /**
      * @var UserAllService
      */
-    private $userAllService;
+    private $allService;
+    /**
+     * @var UserRemoveService
+     */
+    private $removeService;
+    /**
+     * @var UserUpdateService
+     */
+    private $updateService;
 
     /**
      * UsersController constructor.
      * @param UserCreateService $createService
-     * @param UserFindService $userFindService
-     * @param UserAllService $userAllService
+     * @param UserFindService $findService
+     * @param UserAllService $allService
+     * @param UserRemoveService $removeService
+     * @param UserUpdateService $updateService
      */
     public function __construct(UserCreateService $createService,
-                                UserFindService $userFindService,
-                                UserAllService $userAllService)
+                                UserFindService $findService,
+                                UserAllService $allService,
+                                UserRemoveService $removeService,
+                                UserUpdateService $updateService)
     {
 
         $this->createService = $createService;
-        $this->userFindService = $userFindService;
-        $this->userAllService = $userAllService;
+        $this->findService = $findService;
+        $this->allService = $allService;
+        $this->removeService = $removeService;
+        $this->updateService = $updateService;
     }
 
     /**
@@ -51,8 +64,9 @@ class UsersController extends Controller
     public function index()
     {
 
+        $result = $this->allService->all();
 
-        if (!$result = $this->userAllService->all()) {
+        if (count($result) <=0 ) {
 
             return response()->json(['error' => 'users_not_found'], 422);
         }
@@ -74,7 +88,11 @@ class UsersController extends Controller
     public function store(Request $request)
     {
 
-        $this->validateCreate($request);
+        $this->validate($request,[
+            'name' => 'required|max:255',
+            'email' => 'required|email|unique:users|max:255',
+            'password' => 'required|confirmed|min:6|max:255'
+        ]);
 
         if (!$result = $this->createService->create($request)) {
 
@@ -95,7 +113,7 @@ class UsersController extends Controller
     public function show($id)
     {
 
-        if (!$result = $this->userFindService->findBy($id)) {
+        if (!$result = $this->findService->findBy($id)) {
 
             return response()->json(['error' => 'user_not_found'], 422);
         }
@@ -107,13 +125,39 @@ class UsersController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  \Illuminate\Http\Request $request
+     * @param  int $id
      * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Validation\ValidationException
      */
     public function update(Request $request, $id)
     {
-        //
+
+        $validation = [
+            'name' => 'required|max:255',
+            'email' => 'required|unique:users|max:255',
+        ];
+
+        if(isset($request->all()['password'])){
+            $validation['password'] = 'required|confirmed|max:255';
+        }
+
+        $this->validate($request, $validation);
+
+
+        if (!$result = $this->findService->findBy($id)) {
+            return response()->json(['error' => 'user_not_found'], 422);
+        }
+
+        if (!$result = $this->updateService->update($request, $id)) {
+
+            return response()->json(['error' => 'user_not_updated'], 422);
+        }
+
+
+        return response()->json($result,200);
+
+
     }
 
     /**
@@ -124,6 +168,19 @@ class UsersController extends Controller
      */
     public function destroy($id)
     {
-        //
+
+        if (!$result = $this->findService->findBy($id)) {
+            return response()->json(['error' => 'user_not_found'], 422);
+        }
+
+
+        if (!$result = $this->removeService->remove($id)) {
+
+            return response()->json(['error' => 'user_not_removed'], 422);
+        }
+
+        return response()->json(['response'=> 'user_removed'],200);
+
     }
+
 }

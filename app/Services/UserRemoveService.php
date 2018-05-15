@@ -5,26 +5,26 @@ namespace App\Services;
 use App\User;
 
 /**
- * Class UserFindService
+ * Class UserRemoveService
  * @package App\Services
  */
-class UserFindService
+class UserRemoveService
 {
 
     /**
-     * Find User
+     * Remove User
      *
      * @param $id
      * @return bool|array
      */
-    public function findBy($id)
+    public function remove($id)
     {
 
         if (!$user = User::find($id) ) {
             return false;
         }
 
-        return $user;
+        return $user->delete();
 
     }
 
