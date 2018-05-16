@@ -4,7 +4,6 @@ use App\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 
-
 class UserTest extends TestCase
 {
 
@@ -24,20 +23,12 @@ class UserTest extends TestCase
             'password_confirmation' => 'secret',
         ];
 
-
     }
 
-    /**
-     * A basic test example.
-     *
-     * @return void
-     */
     public function testUserCreate()
     {
 
         $this->post('/users', $this->data);
-
-
         $this->assertResponseOk();
 
         $response = (array) json_decode( $this->response->content() );
@@ -58,9 +49,10 @@ class UserTest extends TestCase
         $user = User::first();
 
         $this->get('/users/'. $user->id);
-
         $this->assertResponseOk();
+
         $response = (array) json_decode($this->response->content());
+
         $this->assertArrayHasKey('_id',$response);
         $this->assertArrayHasKey('name',$response);
         $this->assertArrayHasKey('email',$response);
@@ -93,17 +85,15 @@ class UserTest extends TestCase
                 'email',
                 'roles' => [
                     '*' => [
-                            'name', 'permissions'
-                        ]
+                        'name', 'permissions'
+                    ]
                 ]
 
             ]
+
         ]);
 
-
     }
-
-
 
     public function testUpdateUserNoPassword()
     {
@@ -143,7 +133,6 @@ class UserTest extends TestCase
         ];
 
         $this->put('/users/' . $user->id, $data);
-
         $this->assertResponseOk();
 
         $response = (array)json_decode($this->response->content());
@@ -161,12 +150,13 @@ class UserTest extends TestCase
 
     }
 
-
     public function testDeleteUser()
     {
         $user = User::first();
+
         $this->delete('/users/'.$user->id);
         $this->assertResponseOk();
+
         $this->seeJsonEquals([
             'response' => 'user_removed'
         ]);
